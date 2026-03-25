@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PPT 预览 - {{ filename }}</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --accent: #10b981;
+            --accent-hover: #059669;
+            --zinc-50: #fafafa;
+            --zinc-100: #f4f4f5;
+            --zinc-200: #e4e4e7;
+            --zinc-300: #d4d4d8;
+            --zinc-400: #a1a1aa;
+            --zinc-500: #71717a;
+            --zinc-600: #52525b;
+            --zinc-700: #3f3f46;
+            --zinc-800: #27272a;
+            --zinc-900: #18181b;
+        }
+
+        body {
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--zinc-50);
+            color: var(--zinc-800);
+            min-height: 100dvh;
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            padding: 16px 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header h1 {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--zinc-800);
+            letter-spacing: -0.01em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 400px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .view-toggle {
+            display: flex;
+            background: var(--zinc-100);
+            padding: 4px;
+            border-radius: 10px;
+        }
+
+        .view-toggle button {
+            padding: 8px 16px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            border-radius: 8px;
+            color: var(--zinc-500);
+            font-family: 'Outfit', sans-serif;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .view-toggle button.active {
+            background: white;
+            color: var(--zinc-800);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .view-toggle button:active {
+            transform: scale(0.96);
+        }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Slide View - Single Mode */
+        .slide-wrapper {
+            position: relative;
+        }
+
+        .slide-container {
+            background: white;
+            border-radius: 16px;
+            padding: 48px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+            aspect-ratio: 16 / 9;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 360px;
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .slide-container.fade-in {
+            animation: fadeSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes fadeSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(12px) scale(0.96);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .slide-number {
+            position: absolute;
+            bottom: 16px;
+            right: 16px;
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--zinc-400);
+            background: var(--zinc-100);
+            padding: 6px 10px;
+            border-radius: 6px;
+        }
+
+        .slide-content {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            overflow-y: auto;
+        }
+
+        .slide-text {
+            font-size: 15px;
+            line-height: 1.7;
+            color: var(--zinc-700);
+            padding: 16px;
+            background: var(--zinc-50);
+            border-radius: 10px;
+            border-left: 3px solid var(--accent);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .slide-text:first-child {
+            font-size: 26px;
+            font-weight: 700;
+            text-align: center;
+            background: transparent;
+            border-left: none;
+            padding: 24px 16px;
+            color: var(--zinc-900);
+            letter-spacing: -0.02em;
+        }
+
+        .slide-text.empty {
+            display: none;
+        }
+
+        /* Navigation */
+        .navigation {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+            padding: 20px 0;
+        }
+
+        .nav-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: white;
+            border: 1px solid var(--zinc-200);
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            color: var(--zinc-600);
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+            transform: scale(1.05) translateY(-2px);
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.3);
+        }
+
+        .nav-btn:active:not(:disabled) {
+            transform: scale(0.95) translateY(1px);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .nav-btn svg {
+            width: 20px;
+            height: 20px;
+            stroke-width: 2;
+        }
+
+        .page-indicator {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--zinc-500);
+            padding: 0 16px;
+        }
+
+        /* Grid View */
+        .slide-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .slide-card {
+            animation: fadeSlideCard 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+        }
+
+        @keyframes fadeSlideCard {
+            from {
+                opacity: 0;
+                transform: translateY(16px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .slide-card {
+            background: white;
+            border-radius: 14px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+            border: 1px solid var(--zinc-100);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            aspect-ratio: 16 / 9;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            overflow: hidden;
+        }
+
+        .slide-card:hover {
+            box-shadow: 0 12px 32px rgba(0,0,0,0.1);
+            transform: translateY(-6px) scale(1.02);
+            border-color: var(--accent);
+        }
+
+        .slide-card:active {
+            transform: translateY(-2px) scale(0.98);
+        }
+
+        .slide-card-preview {
+            font-size: 12px;
+            color: var(--zinc-500);
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 5;
+            -webkit-box-orient: vertical;
+            line-height: 1.6;
+        }
+
+        .slide-card-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--zinc-800);
+            margin-bottom: 10px;
+            letter-spacing: -0.01em;
+        }
+
+        /* Empty State */
+        .empty-slides {
+            text-align: center;
+            padding: 80px 24px;
+        }
+
+        .empty-slides svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 20px;
+            opacity: 0.2;
+            stroke-width: 1.5;
+        }
+
+        .empty-slides p {
+            font-size: 15px;
+            color: var(--zinc-600);
+            font-weight: 500;
+        }
+
+        .empty-slides span {
+            display: block;
+            font-size: 13px;
+            color: var(--zinc-400);
+            margin-top: 8px;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            font-family: 'Outfit', sans-serif;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            text-decoration: none;
+        }
+
+        .btn:active {
+            transform: scale(0.97) translateY(1px);
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+        }
+
+        .btn-secondary {
+            background: var(--zinc-100);
+            color: var(--zinc-700);
+        }
+
+        .btn-secondary:hover {
+            background: var(--zinc-200);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                padding: 12px 16px;
+            }
+
+            .header h1 {
+                font-size: 13px;
+                max-width: 150px;
+            }
+
+            .header-actions {
+                gap: 6px;
+            }
+
+            .view-toggle button {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+
+            .container {
+                padding: 16px;
+            }
+
+            .slide-container {
+                padding: 24px 16px;
+                min-height: 280px;
+            }
+
+            .slide-text {
+                font-size: 14px;
+                padding: 12px;
+            }
+
+            .slide-text:first-child {
+                font-size: 20px;
+                padding: 16px 8px;
+            }
+
+            .slide-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-btn {
+                width: 44px;
+                height: 44px;
+            }
+        }
+
+        /* Icon Utilities */
+        .icon {
+            width: 18px;
+            height: 18px;
+            stroke-width: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-left">
+            <svg class="icon" style="color: var(--accent);" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <line x1="9" y1="21" x2="15" y2="21"/>
+                <line x1="12" y1="17" x2="12" y2="21"/>
+            </svg>
+            <h1>{{ filename }}</h1>
+        </div>
+        <div class="header-actions">
+            <div class="view-toggle">
+                <button id="gridViewBtn" class="active">网格</button>
+                <button id="singleViewBtn">单页</button>
+            </div>
+            <a href="/api/files/{{ filename }}/download" class="btn btn-primary">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                下载
+            </a>
+            <a href="/" class="btn btn-secondary">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M19 12H5M12 19l7-7M12 5l7 7"/>
+                </svg>
+                返回
+            </a>
+        </div>
+    </div>
+
+    <div class="container">
+        {% if not slides %}
+        <div class="empty-slides">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <line x1="9" y1="21" x2="15" y2="21"/>
+                <line x1="12" y1="17" x2="12" y2="21"/>
+            </svg>
+            <p>此 PPT 没有可预览的内容</p>
+            <span>页面数据可能为空或格式不正确</span>
+        </div>
+        {% else %}
+        <div id="singleView" style="display: none;">
+            <div class="slide-wrapper">
+                <div class="slide-container" id="currentSlide">
+                    <span class="slide-number">第 <span id="slideNum">1</span> / {{ slides|length }} 页</span>
+                </div>
+            </div>
+            <div class="navigation">
+                <button class="nav-btn" id="prevBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <polyline points="15 18 9 12 15 6"/>
+                    </svg>
+                </button>
+                <span class="page-indicator">第 <span id="pageIndicator">1</span> / {{ slides|length }} 页</span>
+                <button class="nav-btn" id="nextBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <polyline points="9 18 15 12 9 6"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div id="gridView" class="slide-grid">
+            {% for slide in slides %}
+            <div class="slide-card" onclick="goToSlide({{ loop.index0 }})" style="animation-delay: calc({{ loop.index0 }} * 60ms)">
+                {% if slide.texts %}
+                <div class="slide-card-title">{{ slide.texts[0][:20] }}{% if slide.texts[0]|length > 20 %}...{% endif %}</div>
+                <div class="slide-card-preview">{% for text in slide.texts[1:4] %}{{ text }}<br>{% endfor %}</div>
+                {% else %}
+                <div class="slide-card-preview">空白页</div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        const slides = {{ slides|tojson }};
+        let currentSlide = 0;
+        let viewMode = 'grid';
+
+        function setView(mode) {
+            viewMode = mode;
+            document.getElementById('gridView').style.display = mode === 'grid' ? 'grid' : 'none';
+            document.getElementById('singleView').style.display = mode === 'single' ? 'block' : 'none';
+            document.getElementById('gridViewBtn').classList.toggle('active', mode === 'grid');
+            document.getElementById('singleViewBtn').classList.toggle('active', mode === 'single');
+            if (mode === 'single') {
+                updateSlide();
+            }
+        }
+
+        function updateSlide() {
+            const slide = slides[currentSlide];
+            const container = document.getElementById('currentSlide');
+
+            let html = '<span class="slide-number">第 ' + (currentSlide + 1) + ' / ' + slides.length + ' 页</span>';
+            html += '<div class="slide-content">';
+
+            if (slide.texts && slide.texts.length > 0) {
+                slide.texts.forEach((text, index) => {
+                    html += '<div class="slide-text">' + escapeHtml(text) + '</div>';
+                });
+            } else {
+                html += '<div class="slide-text empty">空白页</div>';
+            }
+
+            html += '</div>';
+            container.innerHTML = html;
+
+            // Trigger animation
+            requestAnimationFrame(() => {
+                container.classList.add('fade-in');
+                setTimeout(() => {
+                    container.classList.remove('fade-in');
+                }, 400);
+            });
+
+            document.getElementById('slideNum').textContent = currentSlide + 1;
+            document.getElementById('pageIndicator').textContent = currentSlide + 1;
+            document.getElementById('prevBtn').disabled = currentSlide === 0;
+            document.getElementById('nextBtn').disabled = currentSlide === slides.length - 1;
+        }
+
+        function nextSlide() {
+            if (currentSlide < slides.length - 1) {
+                currentSlide++;
+                updateSlide();
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlide();
+            }
+        }
+
+        function goToSlide(index) {
+            currentSlide = index;
+            setView('single');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (viewMode === 'single') {
+                if (e.key === 'ArrowRight' || e.key === ' ') {
+                    e.preventDefault();
+                    nextSlide();
+                } else if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    prevSlide();
+                }
+            }
+        });
+
+        // Initialize
+        if (slides.length > 0) {
+            updateSlide();
+        }
+    </script>
+</body>
+</html>

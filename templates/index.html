@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PPT 生成助手</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #1e40af;
+            --primary-hover: #1e3a8a;
+            --primary-light: #dbeafe;
+            --primary-dark: #1e3a8a;
+            --slate-50: #f8fafc;
+            --slate-100: #f1f5f9;
+            --slate-200: #e2e8f0;
+            --slate-300: #cbd5e1;
+            --slate-400: #94a3b8;
+            --slate-500: #64748b;
+            --slate-600: #475569;
+            --slate-700: #334155;
+            --slate-800: #1e293b;
+            --slate-900: #0f172a;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--slate-100);
+            color: var(--slate-800);
+            min-height: 100dvh;
+            line-height: 1.5;
+        }
+
+        .app-container {
+            max-width: 960px;
+            margin: 0 auto;
+            min-height: 100dvh;
+            padding: 0 24px;
+        }
+
+        /* Header */
+        .header {
+            background: var(--slate-900);
+            margin: 0 -24px;
+            padding: 20px 32px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .header-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--primary);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .header-icon svg {
+            width: 18px;
+            height: 18px;
+            stroke: white;
+            stroke-width: 2;
+        }
+
+        .header h1 {
+            font-size: 17px;
+            font-weight: 600;
+            color: white;
+            letter-spacing: -0.01em;
+        }
+
+        .header-divider {
+            width: 1px;
+            height: 24px;
+            background: var(--slate-700);
+            margin: 0 8px;
+        }
+
+        .header-subtitle {
+            font-size: 13px;
+            color: var(--slate-400);
+            font-weight: 400;
+        }
+
+        /* Section Styles */
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 24px 28px;
+            border: 1px solid var(--slate-200);
+            margin-top: 24px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--slate-100);
+        }
+
+        .section-icon {
+            width: 20px;
+            height: 20px;
+            color: var(--primary);
+            stroke-width: 2;
+        }
+
+        .section-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--slate-800);
+            letter-spacing: -0.01em;
+        }
+
+        .section-badge {
+            margin-left: auto;
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--slate-500);
+            background: var(--slate-100);
+            padding: 4px 10px;
+            border-radius: 4px;
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--slate-700);
+            font-weight: 500;
+            font-size: 13px;
+        }
+
+        .form-group input[type="text"],
+        .form-group textarea {
+            width: 100%;
+            padding: 11px 14px;
+            border: 1px solid var(--slate-300);
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            background: white;
+            color: var(--slate-800);
+            transition: all 0.2s ease;
+        }
+
+        .form-group select {
+            width: 100%;
+            padding: 11px 40px 11px 14px;
+            border: 1px solid var(--slate-300);
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            background: white;
+            color: var(--slate-800);
+            transition: all 0.2s ease;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            cursor: pointer;
+        }
+
+        .form-group input[type="text"]:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
+        }
+
+        .form-group input::placeholder,
+        .form-group textarea::placeholder {
+            color: var(--slate-500);
+        }
+
+        .form-group textarea {
+            min-height: 180px;
+            font-family: 'SF Mono', 'JetBrains Mono', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            resize: vertical;
+            border: 1px solid var(--slate-300);
+            border-radius: 8px;
+            color: var(--slate-800);
+        }
+
+        .form-hint {
+            font-size: 12px;
+            color: var(--slate-500);
+            margin-top: 6px;
+        }
+
+        /* Grid Layout for Form */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .form-grid-col {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-grid-col.full {
+            grid-column: 1 / -1;
+        }
+
+        /* Prompt Editor Card */
+        .prompt-card {
+            background: var(--slate-100);
+            border-radius: 8px;
+            padding: 16px;
+            border: 1px solid var(--slate-200);
+            margin-top: 16px;
+        }
+
+        .prompt-textarea {
+            min-height: 140px;
+            font-size: 13px;
+            background: white;
+            border: 1px solid var(--slate-300);
+            border-radius: 6px;
+            padding: 14px 16px;
+            width: 100%;
+            font-family: 'SF Mono', 'JetBrains Mono', 'Courier New', monospace;
+            resize: vertical;
+            color: var(--slate-700);
+        }
+
+        .prompt-textarea::placeholder {
+            color: var(--slate-500);
+        }
+
+        .prompt-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
+        }
+
+        .prompt-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+
+        .prompt-header h3 {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--slate-600);
+        }
+
+        .prompt-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* File Upload */
+        .upload-area {
+            border: 2px dashed var(--slate-300);
+            border-radius: 10px;
+            padding: 32px 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: var(--slate-50);
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .upload-area.dragover {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .upload-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .upload-icon {
+            width: 44px;
+            height: 44px;
+            color: var(--slate-400);
+            transition: all 0.2s;
+        }
+
+        .upload-area:hover .upload-icon {
+            color: var(--primary);
+        }
+
+        .upload-text {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--slate-600);
+        }
+
+        .upload-hint {
+            font-size: 12px;
+            color: var(--slate-500);
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .file-info-bar {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: var(--primary-light);
+            border: 1px solid var(--primary);
+            border-radius: 8px;
+            margin-top: 12px;
+        }
+
+        .file-info-bar.show {
+            display: flex;
+            animation: slideIn 0.25s ease;
+        }
+
+        .file-name {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--primary-dark);
+        }
+
+        /* Button Styles */
+        .btn {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-primary:disabled {
+            background: var(--slate-300);
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--slate-700);
+            border: 1px solid var(--slate-300);
+        }
+
+        .btn-secondary:hover {
+            background: var(--slate-50);
+            border-color: var(--slate-400);
+        }
+
+        .btn-sm {
+            padding: 8px 14px;
+            font-size: 12px;
+        }
+
+        .btn-success {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-danger {
+            background: #dc2626;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #b91c1c;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--slate-500);
+        }
+
+        .btn-ghost:hover {
+            background: var(--slate-100);
+            color: var(--slate-700);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+        }
+
+        /* File List */
+        .file-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid var(--slate-200);
+            border-radius: 8px;
+        }
+
+        .file-list::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .file-list::-webkit-scrollbar-track {
+            background: var(--slate-100);
+        }
+
+        .file-list::-webkit-scrollbar-thumb {
+            background: var(--slate-300);
+            border-radius: 4px;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--slate-100);
+            transition: background 0.15s ease;
+        }
+
+        .file-item:last-child {
+            border-bottom: none;
+        }
+
+        .file-item:hover {
+            background: var(--slate-50);
+        }
+
+        .file-info {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .file-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--primary-light);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .file-icon svg {
+            width: 18px;
+            height: 18px;
+            color: var(--primary);
+            stroke-width: 2;
+        }
+
+        .file-details {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .file-name {
+            font-weight: 500;
+            color: var(--slate-800);
+            font-size: 13px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .file-meta {
+            font-size: 12px;
+            color: var(--slate-500);
+            margin-top: 2px;
+        }
+
+        .file-actions {
+            display: flex;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 56px 24px;
+            background: var(--slate-50);
+            border-radius: 8px;
+            border: 1px dashed var(--slate-300);
+        }
+
+        .empty-state svg {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 16px;
+            opacity: 0.3;
+            stroke: var(--slate-400);
+            stroke-width: 1.5;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+            color: var(--slate-600);
+            font-weight: 500;
+        }
+
+        .empty-state span {
+            display: block;
+            font-size: 12px;
+            color: var(--slate-500);
+            margin-top: 6px;
+        }
+
+        /* Loading State - Skeleton */
+        .loading {
+            display: none;
+            padding: 32px 20px;
+        }
+
+        .loading.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .skeleton-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .skeleton-card {
+            background: var(--slate-50);
+            border-radius: 8px;
+            padding: 16px;
+            border: 1px solid var(--slate-100);
+        }
+
+        .skeleton-line {
+            height: 10px;
+            background: var(--slate-200);
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        .skeleton-line:last-child {
+            margin-bottom: 0;
+            width: 60%;
+        }
+
+        .skeleton-line.title {
+            height: 14px;
+            width: 70%;
+            margin-bottom: 14px;
+        }
+
+        .skeleton-line.subtitle {
+            width: 40%;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Alert */
+        .alert {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 9999;
+            padding: 12px 16px;
+            border-radius: 0 0 8px 8px;
+            display: none;
+            font-size: 13px;
+            border-left: none;
+            border-top: none;
+            border-right: none;
+            border-bottom: 4px solid;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .alert.active {
+            display: block;
+            animation: slideIn 0.25s ease;
+        }
+
+        .alert-error {
+            background: #fef2f2;
+            color: #991b1b;
+            border-color: #dc2626;
+        }
+
+        .alert-success {
+            background: #f0fdf4;
+            color: #166534;
+            border-color: var(--primary);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .app-container {
+                padding: 0 16px;
+            }
+
+            .header {
+                margin: 0 -16px;
+                padding: 16px 20px;
+            }
+
+            .header h1 {
+                font-size: 15px;
+            }
+
+            .header-subtitle {
+                display: none;
+            }
+
+            .section {
+                padding: 20px;
+                border-radius: 10px;
+                margin-top: 16px;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-grid-col.full {
+                grid-column: auto;
+            }
+
+            .btn-group {
+                flex-direction: column;
+            }
+
+            .file-list {
+                max-height: 300px;
+            }
+
+            .skeleton-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Icon Utilities */
+        .icon {
+            width: 16px;
+            height: 16px;
+            stroke-width: 2;
+        }
+
+        .icon-sm {
+            width: 14px;
+            height: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="alert alert-error" id="errorAlert"></div>
+    <div class="alert alert-success" id="successAlert"></div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                    <path d="M3 9h18"/>
+                    <path d="M9 21V9"/>
+                </svg>
+            </div>
+            <h1>PPT 生成器</h1>
+            <div class="header-divider"></div>
+            <span class="header-subtitle">智能文档转换工具</span>
+        </header>
+
+        <!-- Section 1: AI 配置 -->
+        <div class="section">
+            <div class="section-header">
+                <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+                </svg>
+                <span class="section-title">AI 配置</span>
+            </div>
+
+            <div class="form-grid-col">
+                <div class="form-group">
+                    <label for="modelSelect">选择模型</label>
+                    <select id="modelSelect" name="model">
+                        <option value="qwen-long">qwen-long</option>
+                        <option value="qwen-plus">qwen-plus</option>
+                        <option value="qwen-turbo">qwen-turbo</option>
+                        <option value="qwen-max">qwen-max</option>
+                    </select>
+                </div>
+
+                <div class="prompt-card">
+                    <div class="prompt-header">
+                        <h3>AI 提示词</h3>
+                        <div class="prompt-actions">
+                            <button type="button" class="btn btn-sm btn-ghost" onclick="loadDefaultPrompt()">
+                                <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                                    <path d="M3 3v5h5"/>
+                                </svg>
+                                重置
+                            </button>
+                        </div>
+                    </div>
+                    <textarea id="promptText" class="prompt-textarea" placeholder="留空使用默认提示词..."></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 2: 文件上传 -->
+        <div class="section">
+            <div class="section-header">
+                <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                <span class="section-title">文档上传</span>
+            </div>
+
+            <div class="upload-area" id="uploadArea">
+                <input type="file" id="fileInput" accept=".txt,.md,.doc,.docx">
+                <div class="upload-content">
+                    <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="12" y1="18" x2="12" y2="12"/>
+                        <line x1="9" y1="15" x2="15" y2="15"/>
+                    </svg>
+                    <span class="upload-text">点击或拖拽文件到这里</span>
+                    <span class="upload-hint">支持 .txt, .md, .doc, .docx 格式</span>
+                </div>
+            </div>
+
+            <div class="file-info-bar" id="fileInfoBar">
+                <span class="file-name" id="fileName"></span>
+                <button type="button" class="btn btn-sm btn-ghost" onclick="clearFile()">
+                    <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                    清除
+                </button>
+            </div>
+
+            <div class="form-group" style="margin-top: 20px;">
+                <button type="button" class="btn btn-primary" id="aiGenerateBtn">
+                    <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                    </svg>
+                    生成 PPT 内容
+                </button>
+                <div id="aiGeneratingMsg" style="display:none; margin-top: 10px; font-size: 13px; color: var(--slate-600); text-align: center;">
+                    正在生成 PPT 内容，请稍候...
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 3: PPT 生成配置 -->
+        <div class="section">
+            <div class="section-header">
+                <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                </svg>
+                <span class="section-title">PPT 生成</span>
+                <span class="section-badge">JSON 格式</span>
+            </div>
+
+            <form id="generateForm">
+                <div class="form-group">
+                    <label for="template">选择模板</label>
+                    <select id="template" name="template">
+                        <option value="">-- 请选择模板 --</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="filenamePrefix">文件名前缀（可选）</label>
+                    <input type="text" id="filenamePrefix" name="filenamePrefix" placeholder="例如：年度总结">
+                </div>
+
+                <div class="form-group">
+                    <label for="pagesJson">页面数据 (JSON)</label>
+                    <textarea id="pagesJson" name="pages" placeholder='点击"加载示例数据"填充，或使用 AI 生成...'></textarea>
+                    <div class="form-hint">每页为一个对象，键对应模板中的占位符（如 {主标题}）</div>
+                </div>
+
+                <div class="btn-group">
+                    <button type="button" class="btn btn-secondary btn-sm" id="loadExampleBtn">
+                        <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                        </svg>
+                        加载示例
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="generateBtn">
+                        <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        生成 PPT
+                    </button>
+                </div>
+            </form>
+
+            <div class="loading" id="loading">
+                <div class="skeleton-grid">
+                    <div class="skeleton-card">
+                        <div class="skeleton-line title"></div>
+                        <div class="skeleton-line"></div>
+                        <div class="skeleton-line"></div>
+                        <div class="skeleton-line subtitle"></div>
+                    </div>
+                    <div class="skeleton-card">
+                        <div class="skeleton-line title"></div>
+                        <div class="skeleton-line"></div>
+                        <div class="skeleton-line subtitle"></div>
+                    </div>
+                    <div class="skeleton-card">
+                        <div class="skeleton-line title"></div>
+                        <div class="skeleton-line"></div>
+                        <div class="skeleton-line subtitle"></div>
+                    </div>
+                </div>
+                <p style="text-align:center;font-size:13px;color:var(--slate-500);margin-top:16px;">正在生成 PPT，请稍候...</p>
+            </div>
+        </div>
+
+        <!-- Section 4: 已生成的文件 -->
+        <div class="section">
+            <div class="section-header">
+                <svg class="section-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+                </svg>
+                <span class="section-title">已生成的文件</span>
+                <span class="section-badge" id="fileCount">0 个文件</span>
+            </div>
+            <div class="file-list" id="fileList">
+                <div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                    </svg>
+                    <p>暂无生成的文件</p>
+                    <span>上传文档并生成 PPT 后，这里会显示文件列表</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+    <script>
+        let uploadedFileContent = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadTemplates();
+            await loadFiles();
+            await loadDefaultPrompt();
+            setupFileUpload();
+        });
+
+        function setupFileUpload() {
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('fileInput');
+
+            uploadArea.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', handleFileSelect);
+
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    processFile(files[0]);
+                }
+            });
+        }
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                processFile(file);
+            }
+        }
+
+        function processFile(file) {
+            const fileName = file.name;
+            const fileSize = formatFileSize(file.size);
+
+            document.getElementById('fileName').textContent = `${fileName} · ${fileSize}`;
+            document.getElementById('fileInfoBar').classList.add('show');
+
+            const ext = fileName.split('.').pop().toLowerCase();
+
+            if (ext === 'docx') {
+                // .docx 是 ZIP 压缩包，用 mammoth 提取纯文本
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    mammoth.extractRawText({ arrayBuffer: e.target.result })
+                        .then(result => {
+                            uploadedFileContent = result.value;
+                        })
+                        .catch(() => {
+                            showAlert('error', 'DOCX 文件解析失败');
+                            uploadedFileContent = null;
+                        });
+                };
+                reader.readAsArrayBuffer(file);
+            } else if (ext === 'doc') {
+                // .doc 是 OLE 二进制格式，需要后端用 antiword 解析
+                const formData = new FormData();
+                formData.append('file', file);
+                fetch('/api/upload/doc', { method: 'POST', body: formData })
+                    .then(r => r.json())
+                    .then(result => {
+                        if (result.ok) {
+                            uploadedFileContent = result.content;
+                        } else {
+                            showAlert('error', result.message || 'DOC 文件解析失败');
+                            uploadedFileContent = null;
+                        }
+                    })
+                    .catch(() => {
+                        showAlert('error', 'DOC 文件上传失败');
+                        uploadedFileContent = null;
+                    });
+            } else {
+                // .txt .md 等普通文本文件
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const buffer = e.target.result;
+                    let text = new TextDecoder('utf-8').decode(buffer);
+                    if (looksGarbled(text)) {
+                        text = new TextDecoder('gbk').decode(buffer);
+                    }
+                    uploadedFileContent = text;
+                };
+                reader.readAsArrayBuffer(file);
+            }
+        }
+
+        function looksGarbled(text) {
+            const weirdChars = (text.match(/[�\u0080-\u00FF]/g) || []).length;
+            if (weirdChars > text.length * 0.05) return true;
+            const rareChars = (text.match(/[\u2000-\u2FFF]/g) || []).length;
+            if (rareChars > text.length * 0.1) return true;
+            return false;
+        }
+
+        function clearFile() {
+            uploadedFileContent = null;
+            document.getElementById('fileInput').value = '';
+            document.getElementById('fileInfoBar').classList.remove('show');
+        }
+
+        async function loadDefaultPrompt() {
+            try {
+                const response = await fetch('/api/prompt/default');
+                const result = await response.json();
+                if (result.ok) {
+                    document.getElementById('promptText').value = result.prompt;
+                }
+            } catch (error) {
+                console.error('加载默认提示词失败:', error);
+            }
+        }
+
+        async function aiGenerate() {
+            if (!uploadedFileContent) {
+                showAlert('error', '请先上传文档文件');
+                return;
+            }
+
+            const prompt = document.getElementById('promptText').value.trim() || await getDefaultPrompt();
+            const model = document.getElementById('modelSelect').value;
+
+            const loading = document.getElementById('loading');
+            const aiBtn = document.getElementById('aiGenerateBtn');
+            const aiGeneratingMsg = document.getElementById('aiGeneratingMsg');
+
+            loading.classList.add('active');
+            aiBtn.disabled = true;
+            aiGeneratingMsg.style.display = 'block';
+
+            try {
+                const response = await fetch('/api/ai/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        content: uploadedFileContent,
+                        prompt: prompt,
+                        model: model,
+                    }),
+                });
+
+                const result = await response.json();
+
+                if (result.ok) {
+                    document.getElementById('pagesJson').value = JSON.stringify(result.data, null, 2);
+                    showAlert('success', 'AI 生成成功！');
+                } else {
+                    showAlert('error', result.message || 'AI 生成失败');
+                }
+            } catch (error) {
+                showAlert('error', '请求失败：' + error.message);
+            } finally {
+                loading.classList.remove('active');
+                aiBtn.disabled = false;
+                aiGeneratingMsg.style.display = 'none';
+            }
+        }
+
+        async function getDefaultPrompt() {
+            try {
+                const response = await fetch('/api/prompt/default');
+                const result = await response.json();
+                return result.ok ? result.prompt : '';
+            } catch (error) {
+                return '';
+            }
+        }
+
+        async function loadTemplates() {
+            try {
+                const response = await fetch('/api/templates');
+                const result = await response.json();
+                const select = document.getElementById('template');
+                if (result.ok && result.templates) {
+                    select.innerHTML = '<option value="">-- 请选择模板 --</option>';
+                    result.templates.forEach(t => {
+                        const option = document.createElement('option');
+                        option.value = t.path;
+                        option.textContent = t.display_name;
+                        select.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error('加载模板失败:', error);
+            }
+        }
+
+        async function loadFiles() {
+            try {
+                const response = await fetch('/api/files');
+                const result = await response.json();
+                const fileList = document.getElementById('fileList');
+                const fileCount = document.getElementById('fileCount');
+
+                if (result.ok && result.files && result.files.length > 0) {
+                    fileCount.textContent = result.files.length + ' 个文件';
+                    fileList.innerHTML = result.files.map((f, index) => `
+                        <div class="file-item">
+                            <div class="file-info">
+                                <div class="file-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                        <polyline points="14 2 14 8 20 8"/>
+                                    </svg>
+                                </div>
+                                <div class="file-details">
+                                    <div class="file-name">${escapeHtml(f.name)}</div>
+                                    <div class="file-meta">${formatFileSize(f.size)} · ${f.created}</div>
+                                </div>
+                            </div>
+                            <div class="file-actions">
+                                <button class="btn btn-sm btn-ghost" onclick="previewFile('${f.name}')" title="预览">
+                                    <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                        <circle cx="12" cy="12" r="3"/>
+                                    </svg>
+                                </button>
+                                <button class="btn btn-sm btn-success" onclick="downloadFile('${f.name}')">
+                                    <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                        <polyline points="7 10 12 15 17 10"/>
+                                        <line x1="12" y1="15" x2="12" y2="3"/>
+                                    </svg>
+                                    下载
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteFile('${f.name}')" title="删除">
+                                    <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                        <polyline points="3 6 5 6 21 6"/>
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    fileCount.textContent = '0 个文件';
+                    fileList.innerHTML = `
+                        <div class="empty-state">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                            </svg>
+                            <p>暂无生成的文件</p>
+                            <span>上传文档并生成 PPT 后，这里会显示文件列表</span>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('加载文件列表失败:', error);
+            }
+        }
+
+        document.getElementById('generateForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const template = document.getElementById('template').value;
+            const filenamePrefix = document.getElementById('filenamePrefix').value;
+            const pagesJson = document.getElementById('pagesJson').value;
+
+            if (!template) {
+                showAlert('error', '请选择一个模板');
+                return;
+            }
+
+            if (!pagesJson.trim()) {
+                showAlert('error', '请输入页面数据');
+                return;
+            }
+
+            let pages;
+            try {
+                pages = JSON.parse(pagesJson);
+            } catch (error) {
+                showAlert('error', 'JSON 格式错误：' + error.message);
+                return;
+            }
+
+            if (!Array.isArray(pages) || pages.length === 0) {
+                showAlert('error', '页面数据必须是非空数组');
+                return;
+            }
+
+            const loading = document.getElementById('loading');
+            const generateBtn = document.getElementById('generateBtn');
+
+            loading.classList.add('active');
+            generateBtn.disabled = true;
+
+            try {
+                const response = await fetch('/api/ppt/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        template,
+                        filename_prefix: filenamePrefix || undefined,
+                        data: pages,
+                    }),
+                });
+
+                const result = await response.json();
+
+                if (result.ok) {
+                    showAlert('success', `PPT 生成成功！文件名：${result.filename}`);
+                    document.getElementById('pagesJson').value = '';
+                    await loadFiles();
+                } else {
+                    showAlert('error', result.message || '生成失败');
+                }
+            } catch (error) {
+                showAlert('error', '请求失败：' + error.message);
+            } finally {
+                loading.classList.remove('active');
+                generateBtn.disabled = false;
+            }
+        });
+
+        document.getElementById('aiGenerateBtn').addEventListener('click', aiGenerate);
+        document.getElementById('loadExampleBtn').addEventListener('click', loadExample);
+
+        function loadExample() {
+            const exampleData = [
+    {
+        "主标题": "2026年第一季度个人总结"
+    },
+    {
+        "目录内容占位符1": "个人情况回顾",
+        "目录内容占位符2": "存在问题与不足",
+        "目录内容占位符3": "下一步个人计划"
+    },
+    {
+        "章节序号": "01",
+        "章节标题": "个人情况回顾"
+    },
+    {
+        "页面标题（1框）": "一季度个人总体情况",
+        "小标题占位符1": "学习与成长成效",
+        "内容占位符1": "本季度我坚持以积极进取的态度投入学习生活，认真贯彻学校各项要求，围绕学业目标、品德修养、综合能力提升扎实推进自我提升。累计参与主题学习活动3次，学习心得分享会1次，专题学习2次，各项学习活动参与率达95%以上。"
+    },
+    {
+        "章节序号": "02",
+        "章节标题": "存在问题与不足"
+    },
+    {
+        "页面标题（2框）": "当前个人短板分析",
+        "小标题占位符1": "理论学习方面",
+        "内容占位符1": "部分知识学习深度不够，存在学用脱节现象；学习方法较为单一，自主学习的创新性和主动性有待提升。",
+        "小标题占位符2": "自我提升方面",
+        "内容占位符2": "能力提升进度偏慢；个别时候自我要求不够严格，服务同学、奉献集体的意识需进一步增强。"
+    },
+    {
+        "章节序号": "03",
+        "章节标题": "下一步工作计划"
+    },
+    {
+        "页面标题（3框）": "二季度个人重点计划",
+        "小标题占位符1": "深化知识学习",
+        "内容占位符1": "制定详细学习计划，开展\"书香个人\"建设，推动知识学习入脑入心、学以致用。",
+        "小标题占位符2": "强化自我管理",
+        "内容占位符2": "规范日常学习生活习惯，推进个人能力标准化提升，争做优秀学生榜样。",
+        "小标题占位符3": "服务集体与实践",
+        "内容占位符3": "积极参与\"优秀标兵\"创建活动，推动个人发展与集体事务深度融合，以高标准要求促进全面成长。"
+    },
+    {
+        "页面标题（4框）": "保障措施与自我要求",
+        "小标题占位符1": "压实自我责任",
+        "内容占位符1": "严格履行个人主体责任，主动落实各项学习与提升任务。",
+        "小标题占位符2": "完善自我考核",
+        "内容占位符2": "建立个人提升清单，实行台账管理，定期自我检查。",
+        "小标题占位符3": "加强总结反思",
+        "内容占位符3": "及时总结学习生活中的好经验好做法，营造比学赶超的良好氛围。",
+        "小标题占位符4": "注重成果转化",
+        "内容占位符4": "把学习成果转化为实践能力，以实际表现和成绩检验个人提升成效。"
+    },
+    {
+        "结束语": "谢谢！"
+    }
+];
+            document.getElementById('pagesJson').value = JSON.stringify(exampleData, null, 2);
+            showAlert('success', '已加载示例数据');
+        }
+
+        function previewFile(filename) {
+            window.open(`/api/files/${encodeURIComponent(filename)}/preview`, '_blank');
+        }
+
+        function downloadFile(filename) {
+            window.location.href = `/api/files/${encodeURIComponent(filename)}/download`;
+        }
+
+        async function deleteFile(filename) {
+            if (!confirm(`确定要删除文件 "${filename}" 吗？`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/files/${encodeURIComponent(filename)}/delete`, {
+                    method: 'POST',
+                });
+                const result = await response.json();
+
+                if (result.ok) {
+                    showAlert('success', '文件已删除');
+                    await loadFiles();
+                } else {
+                    showAlert('error', result.message || '删除失败');
+                }
+            } catch (error) {
+                showAlert('error', '请求失败：' + error.message);
+            }
+        }
+
+        function showAlert(type, message) {
+            const errorAlert = document.getElementById('errorAlert');
+            const successAlert = document.getElementById('successAlert');
+
+            errorAlert.classList.remove('active');
+            successAlert.classList.remove('active');
+
+            if (type === 'error') {
+                errorAlert.textContent = message;
+                errorAlert.classList.add('active');
+            } else {
+                successAlert.textContent = message;
+                successAlert.classList.add('active');
+                setTimeout(() => {
+                    successAlert.classList.remove('active');
+                }, 3000);
+            }
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+    </script>
+</body>
+</html>
