@@ -8,6 +8,14 @@ ppt-generate-agent
 
 本项目可以拆解为AI总结和PPT生成这两个部分，后续会在一定时间内更新和维护。
 
+**2026.4.23 V2.0**
+
+优化了生成PPT的美观性。
+
+增加了字体会适配文本框进行缩小的功能。
+
+修复了生成ppt背景丢失的bug。
+
 ## 系统截图
 
 <img width="1372" height="1364" alt="a22a829fd2f7a3a788e9a7e490d0988b" src="https://github.com/user-attachments/assets/5589464d-33ba-4959-a857-9c04d62299df" />
