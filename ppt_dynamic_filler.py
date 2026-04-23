@@ -12,14 +12,20 @@ from __future__ import annotations
 
 import re
 from copy import deepcopy
-from typing import Any, Dict, FrozenSet, Iterable, List, Mapping, Optional, Tuple
+from typing import Any, Dict, FrozenSet, Iterable, List, Mapping, Optional, Set, Tuple
 
 from pptx import Presentation
 from pptx.enum.shapes import MSO_SHAPE_TYPE
-from pptx.oxml.ns import nsuri
+from pptx.oxml.ns import nsuri, qn
 from pptx.slide import Slide
 
 from ppt_filler import fill_slide_placeholders, iter_shapes_with_text_frame
+from ppt_text_fit import (
+    TextFitOptions,
+    collect_shape_ids_for_restricted_fit,
+    configure_ppt_text_fit_logging,
+    fit_slide_text_frames,
+)
 
 # 关系命名空间下的属性（r:embed、r:link、r:id 等）值形如 rIdN，需映射到新幻灯片部件的 rels
 _REL_NS_PREFIX = "{" + nsuri("r") + "}"
@@ -72,6 +78,36 @@ def _remap_copied_relationships(source_part: Any, dest_part: Any, root: Any) -> 
                 el.set(attr_name, id_map[attr_val])
 
 
+def _copy_slide_background(src: Slide, dst: Slide) -> None:
+    """将源幻灯片的背景复制到目标幻灯片。bg 元素在 cSld/sld/bg 下，通过迭代查找。"""
+    # 1. 找源 bg 元素
+    src_bg_elem = None
+    for elem in src.element.iter():
+        if elem.tag == qn("p:bg"):
+            src_bg_elem = elem
+            break
+    if src_bg_elem is None:
+        return  # 无本地背景，继续使用布局/母版继承背景
+
+    # 2. 找目标 spTree（bg 必须插在 spTree 之前）
+    dst_spTree = None
+    for elem in dst.element.iter():
+        if elem.tag == qn("p:spTree"):
+            dst_spTree = elem
+            break
+    if dst_spTree is None:
+        return
+
+    # 3. 删除目标已有的 bg 节点（如有）
+    for elem in list(dst.element.iter()):
+        if elem.tag == qn("p:bg"):
+            elem.getparent().remove(elem)
+
+    # 4. 插入复制的 bg 节点
+    copied_bg = deepcopy(src_bg_elem)
+    dst_spTree.addprevious(copied_bg)
+
+
 def duplicate_slide(pres: Presentation, slide: Slide) -> Slide:
     """复制一页幻灯片（deepcopy 形状并修复 r:embed 等关系，避免图片/图表引用断裂）。"""
     layout = slide.slide_layout
@@ -82,6 +118,7 @@ def duplicate_slide(pres: Presentation, slide: Slide) -> Slide:
         new_el = deepcopy(shape.element)
         new_slide.shapes._spTree.insert_element_before(new_el, "p:extLst")
     _remap_copied_relationships(slide.part, new_slide.part, new_slide.element)
+    _copy_slide_background(slide, new_slide)
     return new_slide
 
 
@@ -147,6 +184,7 @@ def generate_dynamic_ppt(
     pages: Iterable[Mapping[str, Any]],
     *,
     key_aliases: Optional[Mapping[str, str]] = None,
+    text_fit: Optional[TextFitOptions] = None,
 ) -> Tuple[int, int]:
     """
     按 pages 顺序生成 PPT：每页 dict 的键集合需匹配某一模板页的占位符键集合。
@@ -156,6 +194,9 @@ def generate_dynamic_ppt(
         output_path: 输出路径
         pages: 列表/可迭代，每项为占位符 -> 值
         key_aliases: 输入键名 -> 模板键名，会与 DEFAULT_KEY_ALIASES 合并（传入优先覆盖）
+        text_fit: 非 None 且 enabled=True 时，在占位符替换后对每页执行按框字号适配（见 ppt_text_fit）。
+            若 text_fit.only_fit_page_title_content_blocks=True，则仅在 fill 前根据模板占位符
+            收集「内容占位符」所在文本框，避免标题等被缩小。
 
     Returns:
         (生成的内容页数量, 累计替换占位符次数)
@@ -177,14 +218,21 @@ def generate_dynamic_ppt(
         item = _normalize_item(raw, merged_aliases)
         ks = frozenset(item.keys())
         if ks not in keymap:
+            available = [sorted(k) for k in keymap.keys()]
             raise KeyError(
-                "无匹配模板页，键集合为 "
-                f"{sorted(ks)}；"
-                f"可用模板键集合示例: {[sorted(k) for k in list(keymap.keys())[:3]]}..."
+                f"无匹配模板页，键集合为 {sorted(ks)}；\n"
+                f"可用模板键集合 ({len(available)}个): {available}"
             )
         src = keymap[ks]
         new_slide = duplicate_slide(prs, src)
+        shape_ids_to_fit: Optional[Set[int]] = None
+        if text_fit is not None and text_fit.only_fit_page_title_content_blocks:
+            shape_ids_to_fit = collect_shape_ids_for_restricted_fit(
+                new_slide, item, text_fit
+            )
         total_replacements += fill_slide_placeholders(new_slide, item)
+        if text_fit is not None:
+            fit_slide_text_frames(new_slide, text_fit, shape_ids_to_fit=shape_ids_to_fit)
         n_out += 1
 
     for _ in range(template_count):
@@ -193,65 +241,22 @@ def generate_dynamic_ppt(
     prs.save(output_path)
     return n_out, total_replacements
 
+
 if __name__ == "__main__":
+    # dw5.pptx 模板键集合（实际检测）:
+    # 1: ['主标题']
+    # 2: ['目录内容占位符1', '目录内容占位符2', '目录内容占位符3']
+    # 3: ['章节序号', '章节标题']
+    # 4: ['内容占位符1', '小标题占位符1', '页面标题（1框）']
+    # 5: ['内容占位符1', '内容占位符2', '小标题占位符1', '小标题占位符2', '页面标题（2框）']
+    # 6: ['内容占位符1', '内容占位符2', '内容占位符3', '小标题占位符1', '小标题占位符2', '小标题占位符3']  # 3框无页面标题
+    # 7: ['内容占位符1', '内容占位符2', '内容占位符3', '内容占位符4', '小标题占位符1', '小标题占位符2', '小标题占位符3', '小标题占位符4', '页面标题（4框）']
+    # 8: ['结束语']
+    configure_ppt_text_fit_logging()
     generate_dynamic_ppt(
-        template_path="templates/述职报告1.pptx",
-        output_path="output3.pptx",
-        pages=[
-    {
-        "主标题": "2026年第一季度个人总结"
-    },
-    {
-        "目录内容占位符1": "个人情况回顾",
-        "目录内容占位符2": "存在问题与不足",
-        "目录内容占位符3": "下一步个人计划"
-    },
-    {
-        "章节序号": "01",
-        "章节标题": "个人情况回顾"
-    },
-    {
-        "页面标题（1框）": "一季度个人总体情况",
-        "小标题占位符1": "学习与成长成效",
-        "内容占位符1": "本季度我坚持以积极进取的态度投入学习生活，认真贯彻学校各项要求，围绕学业目标、品德修养、综合能力提升扎实推进自我提升。累计参与主题学习活动3次，学习心得分享会1次，专题学习2次，各项学习活动参与率达95%以上。"
-    },
-    {
-        "章节序号": "02",
-        "章节标题": "存在问题与不足"
-    },
-    {
-        "页面标题（2框）": "当前个人短板分析",
-        "小标题占位符1": "理论学习方面",
-        "内容占位符1": "部分知识学习深度不够，存在学用脱节现象；学习方法较为单一，自主学习的创新性和主动性有待提升。",
-        "小标题占位符2": "自我提升方面",
-        "内容占位符2": "能力提升进度偏慢；个别时候自我要求不够严格，服务同学、奉献集体的意识需进一步增强。"
-    },
-    {
-        "章节序号": "03",
-        "章节标题": "下一步工作计划"
-    },
-    {
-        "页面标题（3框）": "二季度个人重点计划",
-        "小标题占位符1": "深化知识学习",
-        "内容占位符1": "制定详细学习计划，开展\"书香个人\"建设，推动知识学习入脑入心、学以致用。",
-        "小标题占位符2": "强化自我管理",
-        "内容占位符2": "规范日常学习生活习惯，推进个人能力标准化提升，争做优秀学生榜样。",
-        "小标题占位符3": "服务集体与实践",
-        "内容占位符3": "积极参与\"优秀标兵\"创建活动，推动个人发展与集体事务深度融合，以高标准要求促进全面成长。"
-    },
-    {
-        "页面标题（4框）": "保障措施与自我要求",
-        "小标题占位符1": "压实自我责任",
-        "内容占位符1": "严格履行个人主体责任，主动落实各项学习与提升任务。",
-        "小标题占位符2": "完善自我考核",
-        "内容占位符2": "建立个人提升清单，实行台账管理，定期自我检查。",
-        "小标题占位符3": "加强总结反思",
-        "内容占位符3": "及时总结学习生活中的好经验好做法，营造比学赶超的良好氛围。",
-        "小标题占位符4": "注重成果转化",
-        "内容占位符4": "把学习成果转化为实践能力，以实际表现和成绩检验个人提升成效。"
-    },
-    {
-        "结束语": "谢谢！"
-    }
-]
+        template_path="templates/会议模板1.pptx",
+        output_path="output.pptx",
+        text_fit=TextFitOptions(only_fit_page_title_content_blocks=True),
+        pages=[],
     )
+

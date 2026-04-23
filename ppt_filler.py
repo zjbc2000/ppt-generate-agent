@@ -16,12 +16,19 @@ from pptx.shapes.base import BaseShape
 def iter_shapes_with_text_frame(
     shapes: Iterable[BaseShape],
 ) -> Iterable[BaseShape]:
-    """递归遍历形状树，产出带 text_frame 的形状（含组合内子形状）。"""
+    """递归遍历形状树，产出带 text_frame 的形状（含组合内子形状）。
+    按 (shape_id, shape_name) 组合去重。shape_id 是 pptx XML 中的唯一标识，
+    用于避免 python-pptx 代理对象跨层级访问时 Python id() 重用导致的重复处理。
+    """
+    seen: set[tuple[int, str]] = set()
     for shape in shapes:
         if shape.shape_type == MSO_SHAPE_TYPE.GROUP:
             yield from iter_shapes_with_text_frame(shape.shapes)  # type: ignore[attr-defined]
         elif shape.has_text_frame:
-            yield shape
+            key = (shape.shape_id, shape.name)
+            if key not in seen:
+                seen.add(key)
+                yield shape
 
 
 def fill_slide_placeholders(slide: Any, data: Dict[str, Any]) -> int:
